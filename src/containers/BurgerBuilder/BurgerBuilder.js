@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import Aux from '../../hoc/Aux'
 import Burger from '../../components/Burger/Burger'
 import BuildControls from '../../components/Burger/BuildControls/BuildControls'
+import Modal from '../../components/UI/Modal/Modal'
+import OrderSummary from '../../components/Burger/OrderSummary/OrderSummary'
 
 const INGREDIENT_PRICES = {
     salad: 0.5,
@@ -19,7 +21,22 @@ class BurgerBuilder extends Component{
             cheese:0,
             meat:0
         },
-        totalPrice : 4  // 4 is the base price
+        totalPrice : 4,  // 4 is the base price
+        cannot_purchase : true,
+        show_modal: false //Modal is showl while purchasing, i.e. click Order Now button
+
+    }
+
+    updatePurchaseState (ingredients) {
+        
+        const sum = Object.keys(ingredients).map(
+             igKey => {
+                  return ingredients[igKey];
+             }).reduce((sum,ele)=> {
+                return sum + ele
+             },0);
+        this.setState ({cannot_purchase: sum <= 0})
+        
     }
 
     addIngredientHandler = (type) => {
@@ -36,6 +53,7 @@ class BurgerBuilder extends Component{
             totalPrice: newPrice,
             ingredients: updatedIngredients
         })
+        this.updatePurchaseState(updatedIngredients);
     }
     
     removeIngredientHandler = (type) => {
@@ -54,8 +72,20 @@ class BurgerBuilder extends Component{
             totalPrice: newPrice,
             ingredients: updatedIngredients
         })
+        this.updatePurchaseState(updatedIngredients);
     }
 
+    modalHandler = () =>  {
+        this.setState({show_modal: true});
+    }
+
+    purchaseCancelHandler = () => {
+        this.setState({show_modal: false});
+    }
+
+    purchaseContinueHandler = () => {
+        alert('You took a step towards a delicious burger!')
+    }
     render(){
         const disabledInfo = {
             ...this.state.ingredients
@@ -65,12 +95,22 @@ class BurgerBuilder extends Component{
         }
          return(
              <Aux>
-                 <Burger ingredients={this.state.ingredients} />
-                 <BuildControls
+                <Modal show={this.state.show_modal}
+                    modalClosed={this.purchaseCancelHandler}>
+                    <OrderSummary 
+                        ingredients={this.state.ingredients}
+                        totalPrice={this.state.totalPrice.toFixed(2)}
+                        purchaseCancelled={this.purchaseCancelHandler} 
+                        purchaseContinued={this.purchaseContinueHandler}/>
+                </Modal>
+                <Burger ingredients={this.state.ingredients} />
+                <BuildControls
                     ingredientAdded={this.addIngredientHandler}
                     ingredientRemoved={this.removeIngredientHandler}
                     disabled = {disabledInfo} 
-                    price={this.state.totalPrice}/>
+                    cannot_purchase = {this.state.cannot_purchase}
+                    price={this.state.totalPrice}
+                    ordered={this.modalHandler}/>
              </Aux>
          );
     }
